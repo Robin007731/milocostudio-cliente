@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>MILOCOSTUDIO</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display&family=Montserrat&display=swap" rel="stylesheet">
+
+<style>
+body{
+  margin:0;
+  background:#1f1f1f;
+  color:#f5f5f5;
+  font-family:Montserrat;
+}
+header{
+  text-align:center;
+  padding:90px 20px;
+}
+h1{
+  font-family:'Playfair Display';
+  font-size:3rem;
+}
+.btn{
+  margin-top:30px;
+  padding:15px 45px;
+  border:1px solid #c2a45d;
+  background:transparent;
+  color:#c2a45d;
+  cursor:pointer;
+}
+.section{
+  display:none;
+  max-width:1100px;
+  margin:60px auto;
+  padding:0 20px;
+}
+.section.active{display:block}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:25px;
+}
+.card{
+  background:#2c2c2c;
+  border-radius:16px;
+  overflow:hidden;
+  cursor:pointer;
+}
+.card img{
+  width:100%;
+  height:260px;
+  object-fit:cover;
+}
+.info{padding:20px}
+.price{
+  margin-top:10px;
+  color:#c2a45d;
+}
+.form{
+  max-width:420px;
+  margin:auto;
+  background:#2c2c2c;
+  padding:30px;
+  border-radius:16px;
+}
+input{
+  width:100%;
+  padding:12px;
+  margin-top:15px;
+  background:#1f1f1f;
+  border:1px solid #444;
+  color:white;
+  border-radius:8px;
+}
+.slot{
+  padding:12px;
+  margin:8px 0;
+  border:1px solid #444;
+  text-align:center;
+  border-radius:8px;
+  cursor:pointer;
+}
+.slot:hover{
+  background:#c2a45d;
+  color:#1f1f1f;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>MILOCOSTUDIO</h1>
+  <p>No es solo un corte. Es una versión mejor de vos.</p>
+  <button class="btn" onclick="mostrar('datos')">Reservar experiencia</button>
+</header>
+
+<div class="section" id="datos">
+  <div class="form">
+    <input id="nombre" placeholder="Nombre">
+    <input id="apellido" placeholder="Apellido">
+    <input id="whatsapp" placeholder="WhatsApp">
+    <button class="btn" onclick="mostrarServicios()">Continuar</button>
+  </div>
+</div>
+
+<div class="section" id="servicios">
+  <h2 style="text-align:center">Servicios & Cortes</h2>
+  <div class="grid" id="gridServicios"></div>
+</div>
+
+<div class="section" id="agenda">
+  <h2 style="text-align:center">Seleccioná horario</h2>
+  <div class="form">
+    <div id="horarios"></div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, get, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+const app = initializeApp({
+  apiKey: "AIzaSyCb47oi5HqrgrqIc1jwukF-igINVSOm5Pk",
+  authDomain: "milocostudio-a1528.firebaseapp.com",
+  databaseURL: "https://milocostudio-a1528-default-rtdb.firebaseio.com",
+  projectId: "milocostudio-a1528",
+  storageBucket: "milocostudio-a1528.firebasestorage.app",
+  messagingSenderId: "578653241182",
+  appId: "1:578653241182:web:dd263f3c6781de8a9ed9cf"
+});
+
+const db = getDatabase(app);
+let servicioSeleccionado="";
+
+window.mostrar=id=>{
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+};
+
+window.mostrarServicios = async()=>{
+  mostrar("servicios");
+  const snap = await get(ref(db,'servicios'));
+  gridServicios.innerHTML="";
+  if(!snap.exists()) return;
+
+  Object.values(snap.val()).forEach(s=>{
+    const card = document.createElement("div");
+    card.className="card";
+    card.innerHTML=`
+      <img src="${s.imagen}">
+      <div class="info">
+        <h3>${s.nombre}</h3>
+        <p>${s.descripcion}</p>
+        <div class="price">Precio: ${s.precio}</div>
+      </div>
+    `;
+    card.onclick=()=>{
+      servicioSeleccionado=s.nombre;
+      mostrar("agenda");
+      cargarHorarios();
+    };
+    gridServicios.appendChild(card);
+  });
+};
+
+async function cargarHorarios(){
+  horarios.innerHTML="";
+  const usados=[];
+  const snap = await get(ref(db,'citas'));
+  if(snap.exists()) Object.values(snap.val()).forEach(c=>usados.push(c.hora));
+
+  for(let h=8;h<20;h++){
+    const hora=(h<10?'0':'')+h+":00";
+    if(!usados.includes(hora)){
+      const d=document.createElement("div");
+      d.className="slot";
+      d.textContent=hora;
+      d.onclick=()=>reservar(hora);
+      horarios.appendChild(d);
+    }
+  }
+}
+
+async function reservar(hora){
+  await push(ref(db,'citas'),{
+    nombre:nombre.value,
+    apellido:apellido.value,
+    whatsapp:whatsapp.value,
+    servicio:servicioSeleccionado,
+    hora
+  });
+
+  window.open(`https://wa.me/59898324329?text=${encodeURIComponent(
+    `✂️ Nueva cita MILOCOSTUDIO
+Cliente: ${nombre.value} ${apellido.value}
+Servicio: ${servicioSeleccionado}
+Hora: ${hora}`
+  )}`);
+
+  alert("Reserva confirmada");
+  location.reload();
+}
+</script>
+
+</body>
+</html>
