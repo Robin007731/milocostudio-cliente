@@ -1,210 +1,358 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>MILOCOSTUDIO</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MILOCOSTUDIO | Reservas</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Montserrat:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --gold: #c2a45d; 
+            --bg: #1f1f1f; 
+            --card: #2c2c2c; 
+            --text: #f5f5f5;
+        }
 
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display&family=Montserrat&display=swap" rel="stylesheet">
+        body { 
+            margin: 0; 
+            background: var(--bg); 
+            color: var(--text); 
+            font-family: 'Montserrat', sans-serif; 
+            padding-top: 180px; /* Espacio para el header fijo */
+        }
 
-<style>
-body{
-  margin:0;
-  background:#1f1f1f;
-  color:#f5f5f5;
-  font-family:Montserrat;
-}
-header{
-  text-align:center;
-  padding:90px 20px;
-}
-h1{
-  font-family:'Playfair Display';
-  font-size:3rem;
-}
-.btn{
-  margin-top:30px;
-  padding:15px 45px;
-  border:1px solid #c2a45d;
-  background:transparent;
-  color:#c2a45d;
-  cursor:pointer;
-}
-.section{
-  display:none;
-  max-width:1100px;
-  margin:60px auto;
-  padding:0 20px;
-}
-.section.active{display:block}
-.grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
-  gap:25px;
-}
-.card{
-  background:#2c2c2c;
-  border-radius:16px;
-  overflow:hidden;
-  cursor:pointer;
-}
-.card img{
-  width:100%;
-  height:260px;
-  object-fit:cover;
-}
-.info{padding:20px}
-.price{
-  margin-top:10px;
-  color:#c2a45d;
-}
-.form{
-  max-width:420px;
-  margin:auto;
-  background:#2c2c2c;
-  padding:30px;
-  border-radius:16px;
-}
-input{
-  width:100%;
-  padding:12px;
-  margin-top:15px;
-  background:#1f1f1f;
-  border:1px solid #444;
-  color:white;
-  border-radius:8px;
-}
-.slot{
-  padding:12px;
-  margin:8px 0;
-  border:1px solid #444;
-  text-align:center;
-  border-radius:8px;
-  cursor:pointer;
-}
-.slot:hover{
-  background:#c2a45d;
-  color:#1f1f1f;
-}
-</style>
+        /* --- Header Fijo Siempre Visible --- */
+        header { 
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(31, 31, 31, 0.95);
+            backdrop-filter: blur(10px);
+            text-align: center; 
+            padding: 40px 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(194, 164, 93, 0.2);
+        }
+
+        header h1 { 
+            font-family: 'Playfair Display', serif; 
+            font-size: 3rem; 
+            color: var(--gold); 
+            margin: 0;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        header p {
+            color: var(--gold);
+            margin: 8px 0 0 0;
+            font-size: 0.9rem;
+            letter-spacing: 4px;
+            opacity: 0.8;
+            font-weight: 300;
+        }
+
+        /* Secciones */
+        .section { display: none; max-width: 900px; margin: 0 auto 40px; padding: 20px; }
+        .active { display: block; animation: fadeIn 0.6s ease; }
+        
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateY(10px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+
+        /* Botón de Inicio Gigante */
+        .hero-btn-container {
+            text-align: center;
+            margin-top: 50px;
+        }
+        .btn-hero {
+            background: transparent;
+            color: var(--gold);
+            border: 2px solid var(--gold);
+            padding: 20px 50px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: 0.4s;
+            border-radius: 0; /* Estilo clásico cuadrado */
+        }
+        .btn-hero:hover {
+            background: var(--gold);
+            color: #111;
+            box-shadow: 0 0 20px rgba(194, 164, 93, 0.4);
+        }
+
+        /* Estilos del Reloj Interactivo */
+        .clock-container {
+            background: var(--card);
+            padding: 25px;
+            border-radius: 20px;
+            text-align: center;
+            border: 1px solid #444;
+            margin-top: 15px;
+        }
+        .time-display {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--gold);
+            margin-bottom: 20px;
+            background: #111;
+            padding: 10px 30px;
+            border-radius: 12px;
+            display: inline-block;
+            border: 1px solid var(--gold);
+        }
+        .clock-selectors {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        .scroll-picker {
+            height: 140px;
+            overflow-y: scroll;
+            width: 80px;
+            border: 1px solid #555;
+            border-radius: 10px;
+            background: #1a1a1a;
+            scrollbar-width: none;
+        }
+        .scroll-picker::-webkit-scrollbar { display: none; }
+        .time-unit {
+            padding: 12px 0;
+            cursor: pointer;
+            transition: 0.3s;
+            opacity: 0.3;
+            font-size: 1.2rem;
+        }
+        .time-unit.selected {
+            opacity: 1;
+            color: var(--gold);
+            font-weight: bold;
+            background: rgba(194, 164, 93, 0.15);
+            transform: scale(1.1);
+        }
+
+        /* Formularios y Botones Generales */
+        .form { background: var(--card); padding: 40px; border-radius: 16px; border: 1px solid #333; }
+        input, .btn-next { 
+            width: 100%; 
+            padding: 18px; 
+            margin-top: 15px; 
+            border-radius: 8px; 
+            border: none; 
+            box-sizing: border-box; 
+            font-family: 'Montserrat';
+        }
+        input { background: #111; color: white; border: 1px solid #444; font-size: 1rem; }
+        input:focus { border-color: var(--gold); outline: none; }
+        
+        .btn-next { 
+            background: var(--gold); 
+            color: #111; 
+            font-weight: 700; 
+            cursor: pointer; 
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: 0.3s; 
+            margin-top: 25px;
+        }
+        .btn-next:disabled { background: #555; opacity: 0.5; }
+
+        /* Grid de Servicios */
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+        .card { 
+            background: var(--card); 
+            border-radius: 12px; 
+            overflow: hidden; 
+            border: 1px solid #333; 
+            transition: 0.3s;
+            cursor: pointer; 
+        }
+        .card:hover { border-color: var(--gold); transform: translateY(-5px); }
+        .card img { width: 100%; height: 200px; object-fit: cover; }
+        .card-body { padding: 15px; text-align: center; }
+        .card-body b { color: var(--gold); font-size: 1.1rem; }
+
+        label { color: var(--gold); font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase; font-weight: bold; display: block; margin-top: 15px;}
+        .status-msg { margin-top: 10px; font-weight: bold; }
+        .disponible { color: #4caf50; }
+        .ocupado { color: #f44336; }
+    </style>
 </head>
-
 <body>
 
 <header>
-  <h1>MILOCOSTUDIO</h1>
-  <p>Tu lugar de siempre, con un aire diferente.</p>
-  <button class="btn" onclick="mostrar('datos')">Reservar experiencia</button>
+    <h1>MILOCOSTUDIO</h1>
+    <p>ESTILO • TRADICIÓN • VANGUARDIA</p>
 </header>
 
+<div class="section active" id="inicio">
+    <div class="hero-btn-container">
+        <button class="btn-hero" onclick="mostrar('datos')">Hacer una Reserva</button>
+    </div>
+</div>
+
 <div class="section" id="datos">
-  <div class="form">
-    <input id="nombre" placeholder="Nombre">
-    <input id="apellido" placeholder="Apellido">
-    <input id="whatsapp" placeholder="WhatsApp">
-    <button class="btn" onclick="mostrarServicios()">Continuar</button>
-  </div>
+    <div class="form">
+        <h3 style="text-align:center; margin-top:0; color:var(--gold)">TUS DATOS</h3>
+        <input id="nombre" placeholder="Nombre completo">
+        <input id="whatsapp" type="tel" placeholder="WhatsApp (Ej: 59899123456)">
+        <button class="btn-next" onclick="validarPaso1()">Ver Servicios</button>
+    </div>
 </div>
 
 <div class="section" id="servicios">
-  <h2 style="text-align:center">Servicios & Cortes</h2>
-  <div class="grid" id="gridServicios"></div>
+    <h2 style="text-align:center; color:var(--gold)">NUESTROS SERVICIOS</h2>
+    <div class="grid" id="gridServicios"></div>
 </div>
 
 <div class="section" id="agenda">
-  <h2 style="text-align:center">Seleccioná horario</h2>
-  <div class="form">
-    <div id="horarios"></div>
-  </div>
+    <div class="form">
+        <h3 style="text-align:center; margin-top:0; color:var(--gold)">FECHA Y HORA</h3>
+        
+        <label>Selecciona el día</label>
+        <input type="date" id="fechaReserva">
+
+        <div class="clock-container">
+            <div class="time-display" id="relojTxt">08:00</div>
+            <div class="clock-selectors">
+                <div>
+                    <small>HORA</small>
+                    <div class="scroll-picker" id="pickHora"></div>
+                </div>
+                <div>
+                    <small>MIN</small>
+                    <div class="scroll-picker" id="pickMin"></div>
+                </div>
+            </div>
+            <div id="statusHora" class="status-msg">Selecciona un horario</div>
+        </div>
+
+        <button class="btn-next" id="btnConfirmar" onclick="confirmarReserva()" disabled>FINALIZAR RESERVA</button>
+    </div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, get, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getDatabase, ref, get, push, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-const app = initializeApp({
-  apiKey: "AIzaSyCb47oi5HqrgrqIc1jwukF-igINVSOm5Pk",
-  authDomain: "milocostudio-a1528.firebaseapp.com",
-  databaseURL: "https://milocostudio-a1528-default-rtdb.firebaseio.com",
-  projectId: "milocostudio-a1528",
-  storageBucket: "milocostudio-a1528.firebasestorage.app",
-  messagingSenderId: "578653241182",
-  appId: "1:578653241182:web:dd263f3c6781de8a9ed9cf"
+const firebaseConfig = {
+    apiKey: "AIzaSyCb47oi5HqrgrqIc1jwukF-igINVSOm5Pk",
+    authDomain: "milocostudio-a1528.firebaseapp.com",
+    databaseURL: "https://milocostudio-a1528-default-rtdb.firebaseio.com",
+    projectId: "milocostudio-a1528",
+    storageBucket: "milocostudio-a1528.firebasestorage.app",
+    messagingSenderId: "578653241182",
+    appId: "1:578653241182:web:dd263f3c6781de8a9ed9cf"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+let reserva = { nombre: "", tel: "", servicio: "", fecha: "", hora: "08:00" };
+let ocupados = [];
+
+window.mostrar = id => {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    window.scrollTo(0,0);
+};
+
+window.validarPaso1 = () => {
+    reserva.nombre = document.getElementById('nombre').value;
+    reserva.tel = document.getElementById('whatsapp').value;
+    if(reserva.nombre.length > 2 && reserva.tel.length > 5) cargarServicios();
+    else alert("Por favor, completa tus datos para continuar.");
+};
+
+async function cargarServicios() {
+    mostrar('servicios');
+    const snap = await get(ref(db, 'servicios'));
+    const grid = document.getElementById('gridServicios');
+    grid.innerHTML = "";
+    snap.forEach(child => {
+        const s = child.val();
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+            <img src="${s.imagen || 'https://via.placeholder.com/300?text=Servicio'}">
+            <div class="card-body">
+                <b>${s.nombre}</b><br>
+                <span style="color:white; font-size: 0.9rem;">$${s.precio}</span>
+            </div>`;
+        card.onclick = () => { reserva.servicio = s.nombre; mostrar('agenda'); };
+        grid.appendChild(card);
+    });
+}
+
+// Lógica Reloj
+const pickHora = document.getElementById('pickHora');
+const pickMin = document.getElementById('pickMin');
+let hSel = "08", mSel = "00";
+
+for(let i=8; i<=20; i++) {
+    const h = i < 10 ? '0'+i : i;
+    const div = document.createElement('div');
+    div.className = 'time-unit';
+    div.innerText = h;
+    div.onclick = () => { hSel = h; actualizarReloj(div, 'pickHora'); };
+    pickHora.appendChild(div);
+}
+
+['00', '30'].forEach(m => {
+    const div = document.createElement('div');
+    div.className = 'time-unit';
+    div.innerText = m;
+    div.onclick = () => { mSel = m; actualizarReloj(div, 'pickMin'); };
+    pickMin.appendChild(div);
 });
 
-const db = getDatabase(app);
-let servicioSeleccionado="";
+function actualizarReloj(el, parentId) {
+    document.querySelectorAll(`#${parentId} .time-unit`).forEach(u => u.classList.remove('selected'));
+    el.classList.add('selected');
+    reserva.hora = `${hSel}:${mSel}`;
+    document.getElementById('relojTxt').innerText = reserva.hora;
+    verificarDisponibilidad();
+}
 
-window.mostrar=id=>{
-  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+document.getElementById('fechaReserva').onchange = async (e) => {
+    reserva.fecha = e.target.value;
+    const snap = await get(query(ref(db, 'reservas'), orderByChild('fecha'), equalTo(reserva.fecha)));
+    ocupados = [];
+    if(snap.exists()) snap.forEach(c => ocupados.push(c.val().hora));
+    verificarDisponibilidad();
 };
 
-window.mostrarServicios = async()=>{
-  mostrar("servicios");
-  const snap = await get(ref(db,'servicios'));
-  gridServicios.innerHTML="";
-  if(!snap.exists()) return;
-
-  Object.values(snap.val()).forEach(s=>{
-    const card = document.createElement("div");
-    card.className="card";
-    card.innerHTML=`
-      <img src="${s.imagen}">
-      <div class="info">
-        <h3>${s.nombre}</h3>
-        <p>${s.descripcion}</p>
-        <div class="price">Precio: ${s.precio}</div>
-      </div>
-    `;
-    card.onclick=()=>{
-      servicioSeleccionado=s.nombre;
-      mostrar("agenda");
-      cargarHorarios();
-    };
-    gridServicios.appendChild(card);
-  });
-};
-
-async function cargarHorarios(){
-  horarios.innerHTML="";
-  const usados=[];
-  const snap = await get(ref(db,'citas'));
-  if(snap.exists()) Object.values(snap.val()).forEach(c=>usados.push(c.hora));
-
-  for(let h=8;h<20;h++){
-    const hora=(h<10?'0':'')+h+":00";
-    if(!usados.includes(hora)){
-      const d=document.createElement("div");
-      d.className="slot";
-      d.textContent=hora;
-      d.onclick=()=>reservar(hora);
-      horarios.appendChild(d);
+function verificarDisponibilidad() {
+    const status = document.getElementById('statusHora');
+    const btn = document.getElementById('btnConfirmar');
+    if(!reserva.fecha) return;
+    
+    if(ocupados.includes(reserva.hora)) {
+        status.innerHTML = `<span class="ocupado">Ocupado</span>`;
+        btn.disabled = true;
+    } else {
+        status.innerHTML = `<span class="disponible">Disponible</span>`;
+        btn.disabled = false;
     }
-  }
 }
 
-async function reservar(hora){
-  await push(ref(db,'citas'),{
-    nombre:nombre.value,
-    apellido:apellido.value,
-    whatsapp:whatsapp.value,
-    servicio:servicioSeleccionado,
-    hora
-  });
+window.confirmarReserva = async () => {
+    try {
+        await push(ref(db, 'reservas'), reserva);
+        const msg = `*RESERVA MILOCOSTUDIO*%0A*Cliente:* ${reserva.nombre}%0A*Servicio:* ${reserva.servicio}%0A*Fecha:* ${reserva.fecha}%0A*Hora:* ${reserva.hora}`;
+        window.open(`https://wa.me/59898324329?text=${msg}`);
+        alert("¡Turno reservado con éxito!");
+        location.reload();
+    } catch (e) { alert("Error al conectar con la base de datos."); }
+};
 
-  window.open(`https://wa.me/59898324329?text=${encodeURIComponent(
-    `✂️ Nueva cita MILOCOSTUDIO
-Cliente: ${nombre.value} ${apellido.value}
-Servicio: ${servicioSeleccionado}
-Hora: ${hora}`
-  )}`);
-
-  alert("Reserva confirmada");
-  location.reload();
-}
+document.getElementById('fechaReserva').min = new Date().toISOString().split('T')[0];
 </script>
 
 </body>
 </html>
-
-
