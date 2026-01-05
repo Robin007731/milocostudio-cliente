@@ -217,7 +217,7 @@
         reserva.hora = `${hSel}:${mSel}`;
         await push(ref(db, 'reservas'), reserva);
         const waMsg = `*MILOCOSTUDIO*%0A*Cita:* ${reserva.servicio}%0A*Fecha:* ${reserva.fecha}%0A*Hora:* ${reserva.hora}%0A*Cliente:* ${reserva.nombre}`;
-        window.open(`https://wa.me/59898324329?text=${waMsg}`);
+        window.open(`https://wa.me/59899518324?text=${waMsg}`);
         document.getElementById('mTitle').innerText = "LISTO";
         document.getElementById('mText').innerText = "Tu reserva ha sido enviada.";
         document.getElementById('custom-modal').style.display = 'flex';
@@ -226,3 +226,4 @@
 </script>
 </body>
 </html>
+
