@@ -8,43 +8,46 @@
     <style>
         :root { 
             --gold: #ffffff; --bg: #3d3d3d; --card: #4a4a4a; --text: #ffffff;
-            --input-bg: #2b2b2b; --overlay: rgba(0,0,0,0.9);
+            --input-bg: #2b2b2b; --overlay: rgba(0,0,0,0.8);
             --red-error: #ff4d4d; 
         }
         body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Montserrat', sans-serif; padding-top: 140px; }
         header { position: fixed; top: 0; left: 0; width: 100%; background: rgba(61, 61, 61, 0.95); backdrop-filter: blur(10px); text-align: center; padding: 30px 0; z-index: 1000; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
         header h1 { font-family: 'Playfair Display', serif; font-size: 2.2rem; color: var(--gold); margin: 0; letter-spacing: 6px; text-transform: uppercase; }
         
-        .section { display: none; max-width: 500px; margin: 0 auto 40px; padding: 20px; }
-        .active { display: block; animation: fadeIn 0.4s ease forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .section { display: none; max-width: 600px; margin: 0 auto 40px; padding: 20px; }
+        .active { display: block; animation: fadeIn 0.8s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        .form-container { background: var(--card); padding: 30px; border-radius: 15px; box-shadow: 0 15px 35px rgba(0,0,0,0.3); }
-        input { width: 100%; padding: 15px; margin-top: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: var(--input-bg); color: white; box-sizing: border-box; font-size: 1rem; }
+        .form { background: var(--card); padding: 35px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        input { width: 100%; padding: 15px; margin-top: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: var(--input-bg); color: white; box-sizing: border-box; }
         
-        .btn-hero { background: transparent; color: var(--gold); border: 1px solid var(--gold); padding: 18px 45px; font-size: 0.9rem; font-weight: 600; text-transform: uppercase; letter-spacing: 3px; cursor: pointer; }
+        .btn-hero { background: transparent; color: var(--gold); border: 1px solid var(--gold); padding: 18px 45px; font-size: 0.9rem; font-weight: 600; text-transform: uppercase; letter-spacing: 3px; cursor: pointer; transition: 0.4s; }
         .btn-next { width: 100%; padding: 18px; background: var(--gold); color: var(--bg); font-weight: 700; cursor: pointer; letter-spacing: 2px; text-transform: uppercase; border: none; border-radius: 8px; margin-top: 25px; }
-        .btn-next:disabled { background: #555 !important; cursor: not-allowed; opacity: 0.5; color: #888; }
+        .btn-next:disabled { background: #666; cursor: not-allowed; opacity: 0.5; }
 
-        .service-item { display: flex; justify-content: space-between; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 8px; margin-bottom: 10px; cursor: pointer; border: 1px solid transparent; }
-        .service-item:hover { border-color: white; }
-
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-top: 20px; }
-        .day { padding: 12px 0; font-size: 0.9rem; cursor: pointer; border-radius: 8px; background: rgba(0,0,0,0.1); text-align: center; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; margin-top: 15px; }
+        .day { padding: 10px 0; font-size: 0.9rem; cursor: pointer; border-radius: 5px; transition: 0.2s; }
         .day.selected { background: var(--gold) !important; color: var(--bg) !important; font-weight: bold; }
-        .day.full { opacity: 0.2; pointer-events: none; text-decoration: line-through; }
-
-        .clock-container { margin-top: 25px; background: rgba(0,0,0,0.2); padding: 20px; border-radius: 12px; }
-        .time-display { font-size: 2.2rem; color: var(--gold); margin-bottom: 15px; text-align: center; font-weight: bold; }
-        .clock-selectors { display: flex; justify-content: center; gap: 20px; }
-        .scroll-picker { height: 140px; overflow-y: auto; width: 90px; background: var(--input-bg); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); }
         
-        .time-unit { padding: 15px 0; cursor: pointer; opacity: 0.3; text-align: center; font-weight: 600; font-size: 1.1rem; transition: 0.2s; }
-        .time-unit.selected { opacity: 1; background: rgba(255,255,255,0.1); color: var(--gold); }
-        .time-unit.occupied { color: var(--red-error) !important; text-decoration: line-through; opacity: 0.05 !important; pointer-events: none; }
+        .clock-container { text-align: center; margin-top: 20px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 10px; }
+        .time-display { font-size: 2rem; color: var(--gold); margin-bottom: 15px; }
+        .clock-selectors { display: flex; justify-content: center; gap: 15px; }
+        .scroll-picker { height: 120px; overflow-y: scroll; width: 80px; background: var(--input-bg); border-radius: 5px; scrollbar-width: none; }
+        .time-unit { padding: 12px 0; cursor: pointer; opacity: 0.4; transition: 0.2s; }
+        .time-unit.selected { opacity: 1; font-weight: bold; background: rgba(255,255,255,0.1); color: var(--gold); }
+        
+        /* ESTILO PARA HORA CANCELADA/OCUPADA */
+        .time-unit.occupied { 
+            color: var(--red-error) !important; 
+            text-decoration: line-through; 
+            opacity: 0.05 !important; 
+            cursor: not-allowed !important;
+            pointer-events: none; /* Bloqueo real de clic */
+        }
 
-        #custom-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--overlay); display: none; justify-content: center; align-items: center; z-index: 10000; backdrop-filter: blur(10px); }
-        .modal-content { background: var(--card); padding: 40px; border-radius: 20px; max-width: 400px; width: 85%; text-align: center; }
+        #custom-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--overlay); display: none; justify-content: center; align-items: center; z-index: 10000; backdrop-filter: blur(8px); }
+        .modal-content { background: var(--card); padding: 30px; border-radius: 15px; max-width: 400px; width: 85%; text-align: center; }
     </style>
 </head>
 <body>
@@ -53,30 +56,28 @@
     <h1>MILOCOSTUDIO</h1>
 </header>
 
-<div class="section active" id="inicio" style="text-align:center;">
-    <button class="btn-hero" onclick="mostrar('datos')">Reservar Turno</button>
+<div class="section active" id="inicio">
+    <div style="text-align:center;"><button class="btn-hero" onclick="mostrar('datos')">Reservar Turno</button></div>
 </div>
 
 <div class="section" id="datos">
-    <div class="form-container">
-        <h3>MIS DATOS</h3>
+    <div class="form">
+        <h3 style="text-align:center;">MIS DATOS</h3>
         <input id="nombre" placeholder="Nombre completo">
         <input id="whatsapp" type="tel" placeholder="WhatsApp">
-        <button class="btn-next" onclick="validarPaso1()">Siguiente</button>
+        <button class="btn-next" onclick="validarPaso1()">Elegir Servicio</button>
     </div>
 </div>
 
 <div class="section" id="servicios">
-    <div class="form-container">
-        <h3>SERVICIOS</h3>
-        <div id="listaServicios"></div>
-    </div>
+    <div id="listaServicios" class="form"></div>
 </div>
 
 <div class="section" id="agenda">
-    <div class="form-container">
-        <h3>FECHA Y HORA</h3>
+    <div class="form">
+        <h3 style="text-align:center;">FECHA Y HORA</h3>
         <div id="calendarGrid" class="calendar-grid"></div>
+        
         <div class="clock-container">
             <div class="time-display" id="relojTxt">--:--</div>
             <div class="clock-selectors">
@@ -84,17 +85,11 @@
                 <div><small>MIN</small><div class="scroll-picker" id="pickMin"></div></div>
             </div>
         </div>
-        <button class="btn-next" id="btnConfirmar" onclick="confirmarReserva()" disabled>Confirmar</button>
+        <button class="btn-next" id="btnConfirmar" onclick="confirmarReserva()" disabled>Confirmar Cita</button>
     </div>
 </div>
 
-<div id="custom-modal">
-    <div class="modal-content">
-        <h2 id="mTitle">¡LISTO!</h2>
-        <p id="mText"></p>
-        <button class="btn-next" onclick="location.reload()">CERRAR</button>
-    </div>
-</div>
+<div id="custom-modal"><div class="modal-content"><h3 id="mTitle"></h3><p id="mText"></p><button class="btn-next" onclick="location.reload()">ENTENDIDO</button></div></div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -111,32 +106,27 @@
     const db = getDatabase(app);
 
     let reserva = { nombre: "", tel: "", servicio: "", fecha: "", hora: "" };
-    let ocupadosDelDia = [];
+    let ocupados = [];
     let hSel = "", mSel = "";
 
-    window.mostrar = (id) => {
+    window.mostrar = id => {
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
-        if(id === 'agenda') {
-            renderCalendar();
-            initReloj(); // Aseguramos que el reloj se dibuje siempre
-        }
+        if(id === 'agenda') renderCalendar();
     };
 
     window.validarPaso1 = () => {
         reserva.nombre = document.getElementById('nombre').value;
         reserva.tel = document.getElementById('whatsapp').value;
         if(reserva.nombre && reserva.tel) cargarServicios();
-        else alert("Completa tus datos");
     };
 
     async function cargarServicios() {
         mostrar('servicios');
         const snap = await get(ref(db, 'catalogo'));
         const container = document.getElementById('listaServicios');
-        container.innerHTML = "Cargando...";
+        container.innerHTML = "";
         if(snap.exists()){
-            container.innerHTML = "";
             Object.values(snap.val()).forEach(s => {
                 const div = document.createElement('div');
                 div.className = 'service-item';
@@ -147,25 +137,24 @@
         }
     }
 
-    async function renderCalendar() {
+    function renderCalendar() {
         const grid = document.getElementById('calendarGrid');
         grid.innerHTML = "";
         const today = new Date();
-        
         for(let i=0; i<14; i++) {
             const d = new Date(); d.setDate(today.getDate() + i);
             const dStr = d.toISOString().split('T')[0];
             const el = document.createElement('div');
-            el.className = 'day'; el.innerText = d.getDate();
-            
+            el.className = 'day';
+            el.innerText = d.getDate();
             el.onclick = async () => {
                 document.querySelectorAll('.day').forEach(x => x.classList.remove('selected'));
                 el.classList.add('selected');
                 reserva.fecha = dStr;
                 
-                // Buscar ocupados
+                // Descargar horas ocupadas para este día
                 const snap = await get(query(ref(db,'reservas'), orderByChild('fecha'), equalTo(dStr)));
-                ocupadosDelDia = snap.exists() ? Object.values(snap.val()).map(r => r.hora) : [];
+                ocupados = snap.exists() ? Object.values(snap.val()).map(r => r.hora) : [];
                 
                 hSel = ""; mSel = ""; 
                 actualizarReloj();
@@ -177,25 +166,22 @@
     function initReloj() {
         const ph = document.getElementById('pickHora');
         const pm = document.getElementById('pickMin');
-        ph.innerHTML = ""; pm.innerHTML = ""; 
-
-        // Horas 08-20
+        // Horas de 08 a 20
         for(let i=8; i<=20; i++) {
             const h = i.toString().padStart(2,'0');
-            const d = document.createElement('div'); 
-            d.className='time-unit'; d.innerText=h; d.id=`h-${h}`;
+            const d = document.createElement('div'); d.className='time-unit'; d.innerText=h; d.id=`h-${h}`;
             d.onclick = () => {
-                hSel = h; mSel = ""; 
+                if(d.classList.contains('occupied')) return; // CANCELAR CLIC SI ESTÁ OCUPADO
+                hSel = h; mSel = ""; // Resetear minuto al cambiar hora
                 actualizarReloj();
             };
             ph.appendChild(d);
         }
-
-        // Minutos
+        // Minutos 00 y 30
         ['00','30'].forEach(m => {
-            const d = document.createElement('div'); 
-            d.className='time-unit'; d.innerText=m; d.id=`m-${m}`;
+            const d = document.createElement('div'); d.className='time-unit'; d.innerText=m; d.id=`m-${m}`;
             d.onclick = () => {
+                if(d.classList.contains('occupied')) return; // CANCELAR CLIC SI ESTÁ OCUPADO
                 mSel = m; 
                 actualizarReloj();
             };
@@ -204,56 +190,61 @@
     }
 
     function actualizarReloj() {
+        // Limpiar estados previos
         document.querySelectorAll('.time-unit').forEach(el => el.classList.remove('selected', 'occupied'));
         
-        // Bloquear Horas llenas (00 y 30 ocupados)
+        // 1. Bloquear Horas: Si una hora tiene sus dos turnos (00 y 30) ocupados, se cancela la hora completa.
         document.querySelectorAll('[id^="h-"]').forEach(el => {
             const h = el.innerText;
-            const enHora = ocupadosDelDia.filter(t => t.startsWith(h + ":"));
-            if (enHora.length >= 2) el.classList.add('occupied');
+            const turnosEsaHora = ocupados.filter(t => t.startsWith(h + ":"));
+            if (turnosEsaHora.length >= 2) el.classList.add('occupied');
         });
 
-        // Marcar Hora y bloquear minutos individuales
-        if(hSel) {
-            const targetH = document.getElementById(`h-${hSel}`);
-            if(targetH) targetH.classList.add('selected');
-            
+        // 2. Bloquear Minutos: Si se eligió una hora, ver qué minutos de esa hora están cancelados.
+        if (hSel) {
+            const elHora = document.getElementById(`h-${hSel}`);
+            if(elHora.classList.contains('occupied')) { hSel = ""; } // Seguridad extra
+            else { elHora.classList.add('selected'); }
+
             document.querySelectorAll('[id^="m-"]').forEach(el => {
                 const m = el.innerText;
-                if(ocupadosDelDia.includes(`${hSel}:${m}`)) el.classList.add('occupied');
+                if (ocupados.includes(`${hSel}:${m}`)) {
+                    el.classList.add('occupied');
+                }
             });
         }
 
         if(mSel) {
-            const targetM = document.getElementById(`m-${mSel}`);
-            if(targetM) targetM.classList.add('selected');
+            const elMin = document.getElementById(`m-${mSel}`);
+            if(elMin.classList.contains('occupied')) { mSel = ""; } // Seguridad extra
+            else { elMin.classList.add('selected'); }
         }
-
-        const listo = hSel && mSel && reserva.fecha;
-        document.getElementById('relojTxt').innerText = (hSel && mSel) ? `${hSel}:${mSel}` : (hSel ? `${hSel}:--` : "--:--");
-        document.getElementById('btnConfirmar').disabled = !listo;
+        
+        const completo = hSel && mSel;
+        document.getElementById('relojTxt').innerText = completo ? `${hSel}:${mSel}` : (hSel ? `${hSel}:--` : "--:--");
+        document.getElementById('btnConfirmar').disabled = !completo;
     }
 
     window.confirmarReserva = async () => {
         reserva.hora = `${hSel}:${mSel}`;
+        // Doble verificación antes de guardar
+        const check = await get(query(ref(db,'reservas'), orderByChild('fecha'), equalTo(reserva.fecha)));
+        const yaExiste = check.exists() && Object.values(check.val()).some(r => r.hora === reserva.hora);
         
-        // Verificar si alguien ganó el lugar mientras elegías
-        const snap = await get(query(ref(db,'reservas'), orderByChild('fecha'), equalTo(reserva.fecha)));
-        const yaOcupado = snap.exists() && Object.values(snap.val()).some(r => r.hora === reserva.hora);
-        
-        if(yaOcupado) {
-            alert("Ese horario se acaba de ocupar. Elige otro.");
+        if(yaExiste) {
+            alert("Lo sentimos, alguien acaba de ganar este horario. Por favor elige otro.");
             location.reload();
             return;
         }
 
         await push(ref(db, 'reservas'), reserva);
-        document.getElementById('mText').innerText = `Agendado para el ${reserva.fecha} a las ${reserva.hora}hs.`;
+        document.getElementById('mTitle').innerText = "¡TURNO CONFIRMADO!";
+        document.getElementById('mText').innerText = `${reserva.nombre}, te esperamos el día ${reserva.fecha} a las ${reserva.hora}hs.`;
         document.getElementById('custom-modal').style.display = 'flex';
-        
-        const textoWA = `Hola! Soy ${reserva.nombre}, reservé un turno para ${reserva.servicio} el día ${reserva.fecha} a las ${reserva.hora}hs.`;
-        window.open(`https://wa.me/59898324329?text=${encodeURIComponent(textoWA)}`);
+        window.open(`https://wa.me/59898324329?text=Hola! Reservé un turno: %0A- Servicio: ${reserva.servicio}%0A- Fecha: ${reserva.fecha}%0A- Hora: ${reserva.hora}`);
     };
+
+    initReloj();
 </script>
 </body>
 </html>
