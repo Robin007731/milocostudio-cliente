@@ -9,7 +9,7 @@
         :root { 
             --gold: #ffffff; --bg: #3d3d3d; --card: #4a4a4a; --text: #ffffff;
             --input-bg: #2b2b2b; --overlay: rgba(0,0,0,0.8);
-            --red-error: #ff4d4d; 
+            --red-error: #ff6b6b; 
         }
         body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Montserrat', sans-serif; padding-top: 140px; }
         header { position: fixed; top: 0; left: 0; width: 100%; background: rgba(61, 61, 61, 0.95); backdrop-filter: blur(10px); text-align: center; padding: 30px 0; z-index: 1000; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
@@ -26,10 +26,17 @@
         .btn-next { width: 100%; padding: 18px; background: var(--gold); color: var(--bg); font-weight: 700; cursor: pointer; letter-spacing: 2px; text-transform: uppercase; border: none; border-radius: 8px; margin-top: 25px; }
         .btn-next:disabled { background: #666; cursor: not-allowed; opacity: 0.5; }
 
+        .category-title { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: var(--gold); margin: 30px 0 15px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .service-item { display: flex; justify-content: space-between; padding: 12px 5px; cursor: pointer; border-radius: 6px; }
+        .service-item:hover { background: rgba(255,255,255,0.05); }
+
+        /* CALENDARIO */
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; margin-top: 15px; }
-        .day { padding: 10px 0; font-size: 0.9rem; cursor: pointer; border-radius: 5px; transition: 0.2s; }
+        .day { padding: 10px 0; font-size: 0.9rem; cursor: pointer; border-radius: 5px; }
+        .day.disabled { opacity: 0.1; cursor: not-allowed; text-decoration: line-through; }
         .day.selected { background: var(--gold) !important; color: var(--bg) !important; font-weight: bold; }
         
+        /* RELOJ Y BLOQUEO */
         .clock-container { text-align: center; margin-top: 20px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 10px; }
         .time-display { font-size: 2rem; color: var(--gold); margin-bottom: 15px; }
         .clock-selectors { display: flex; justify-content: center; gap: 15px; }
@@ -37,13 +44,12 @@
         .time-unit { padding: 12px 0; cursor: pointer; opacity: 0.4; transition: 0.2s; }
         .time-unit.selected { opacity: 1; font-weight: bold; background: rgba(255,255,255,0.1); color: var(--gold); }
         
-        /* ESTILO PARA HORA CANCELADA/OCUPADA */
+        /* ESTILO PARA HORA OCUPADA */
         .time-unit.occupied { 
-            color: var(--red-error) !important; 
+            color: var(--red-error); 
             text-decoration: line-through; 
-            opacity: 0.05 !important; 
-            cursor: not-allowed !important;
-            pointer-events: none; /* Bloqueo real de clic */
+            opacity: 0.2; 
+            pointer-events: none; /* No permite hacer click */
         }
 
         #custom-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--overlay); display: none; justify-content: center; align-items: center; z-index: 10000; backdrop-filter: blur(8px); }
@@ -56,8 +62,8 @@
     <h1>MILOCOSTUDIO</h1>
 </header>
 
-<div class="section active" id="inicio">
-    <div style="text-align:center;"><button class="btn-hero" onclick="mostrar('datos')">Reservar Turno</button></div>
+<div class="section active" id="inicio" style="text-align:center;">
+    <button class="btn-hero" onclick="mostrar('datos')">Reservar Turno</button>
 </div>
 
 <div class="section" id="datos">
@@ -106,7 +112,7 @@
     const db = getDatabase(app);
 
     let reserva = { nombre: "", tel: "", servicio: "", fecha: "", hora: "" };
-    let ocupados = [];
+    let ocupados = []; // Aquí guardaremos las horas que ya tienen dueño
     let hSel = "", mSel = "";
 
     window.mostrar = id => {
@@ -152,7 +158,7 @@
                 el.classList.add('selected');
                 reserva.fecha = dStr;
                 
-                // Descargar horas ocupadas para este día
+                // BUSCAR HORAS OCUPADAS PARA ESTA FECHA
                 const snap = await get(query(ref(db,'reservas'), orderByChild('fecha'), equalTo(dStr)));
                 ocupados = snap.exists() ? Object.values(snap.val()).map(r => r.hora) : [];
                 
@@ -163,62 +169,43 @@
         }
     }
 
+    // GENERAR SELECTORES DE HORA
     function initReloj() {
         const ph = document.getElementById('pickHora');
         const pm = document.getElementById('pickMin');
-        // Horas de 08 a 20
         for(let i=8; i<=20; i++) {
             const h = i.toString().padStart(2,'0');
             const d = document.createElement('div'); d.className='time-unit'; d.innerText=h; d.id=`h-${h}`;
-            d.onclick = () => {
-                if(d.classList.contains('occupied')) return; // CANCELAR CLIC SI ESTÁ OCUPADO
-                hSel = h; mSel = ""; // Resetear minuto al cambiar hora
-                actualizarReloj();
-            };
-            ph.appendChild(d);
+            d.onclick = () => { hSel=h; actualizarReloj(); }; ph.appendChild(d);
         }
-        // Minutos 00 y 30
         ['00','30'].forEach(m => {
             const d = document.createElement('div'); d.className='time-unit'; d.innerText=m; d.id=`m-${m}`;
-            d.onclick = () => {
-                if(d.classList.contains('occupied')) return; // CANCELAR CLIC SI ESTÁ OCUPADO
-                mSel = m; 
-                actualizarReloj();
-            };
-            pm.appendChild(d);
+            d.onclick = () => { mSel=m; actualizarReloj(); }; pm.appendChild(d);
         });
     }
 
     function actualizarReloj() {
-        // Limpiar estados previos
         document.querySelectorAll('.time-unit').forEach(el => el.classList.remove('selected', 'occupied'));
         
-        // 1. Bloquear Horas: Si una hora tiene sus dos turnos (00 y 30) ocupados, se cancela la hora completa.
-        document.querySelectorAll('[id^="h-"]').forEach(el => {
-            const h = el.innerText;
-            const turnosEsaHora = ocupados.filter(t => t.startsWith(h + ":"));
-            if (turnosEsaHora.length >= 2) el.classList.add('occupied');
-        });
-
-        // 2. Bloquear Minutos: Si se eligió una hora, ver qué minutos de esa hora están cancelados.
-        if (hSel) {
-            const elHora = document.getElementById(`h-${hSel}`);
-            if(elHora.classList.contains('occupied')) { hSel = ""; } // Seguridad extra
-            else { elHora.classList.add('selected'); }
-
-            document.querySelectorAll('[id^="m-"]').forEach(el => {
-                const m = el.innerText;
-                if (ocupados.includes(`${hSel}:${m}`)) {
-                    el.classList.add('occupied');
+        // Marcar ocupados (Si la combinación HORA:MINUTO ya existe en 'ocupados')
+        if (reserva.fecha) {
+            document.querySelectorAll('.time-unit').forEach(el => {
+                const val = el.innerText;
+                const esHora = el.id.startsWith('h-');
+                
+                if (esHora) {
+                    // Si ambos turnos de esa hora (00 y 30) están llenos, bloqueamos la hora completa
+                    const turnosEnHora = ocupados.filter(t => t.startsWith(val + ":"));
+                    if (turnosEnHora.length >= 2) el.classList.add('occupied');
+                } else {
+                    // Si la hora actual + este minuto está ocupado, bloqueamos el minuto
+                    if (hSel && ocupados.includes(`${hSel}:${val}`)) el.classList.add('occupied');
                 }
             });
         }
 
-        if(mSel) {
-            const elMin = document.getElementById(`m-${mSel}`);
-            if(elMin.classList.contains('occupied')) { mSel = ""; } // Seguridad extra
-            else { elMin.classList.add('selected'); }
-        }
+        if(hSel) document.getElementById(`h-${hSel}`).classList.add('selected');
+        if(mSel) document.getElementById(`m-${mSel}`).classList.add('selected');
         
         const completo = hSel && mSel;
         document.getElementById('relojTxt').innerText = completo ? `${hSel}:${mSel}` : (hSel ? `${hSel}:--` : "--:--");
@@ -227,21 +214,12 @@
 
     window.confirmarReserva = async () => {
         reserva.hora = `${hSel}:${mSel}`;
-        // Doble verificación antes de guardar
-        const check = await get(query(ref(db,'reservas'), orderByChild('fecha'), equalTo(reserva.fecha)));
-        const yaExiste = check.exists() && Object.values(check.val()).some(r => r.hora === reserva.hora);
-        
-        if(yaExiste) {
-            alert("Lo sentimos, alguien acaba de ganar este horario. Por favor elige otro.");
-            location.reload();
-            return;
-        }
-
         await push(ref(db, 'reservas'), reserva);
-        document.getElementById('mTitle').innerText = "¡TURNO CONFIRMADO!";
-        document.getElementById('mText').innerText = `${reserva.nombre}, te esperamos el día ${reserva.fecha} a las ${reserva.hora}hs.`;
+        document.getElementById('mTitle').innerText = "¡RESERVA EXITOSA!";
+        document.getElementById('mText').innerText = `Te esperamos el ${reserva.fecha} a las ${reserva.hora}`;
         document.getElementById('custom-modal').style.display = 'flex';
-        window.open(`https://wa.me/59898324329?text=Hola! Reservé un turno: %0A- Servicio: ${reserva.servicio}%0A- Fecha: ${reserva.fecha}%0A- Hora: ${reserva.hora}`);
+        // Enviar WhatsApp
+        window.open(`https://wa.me/59898324329?text=Reserva: ${reserva.servicio} - ${reserva.fecha} ${reserva.hora}`);
     };
 
     initReloj();
