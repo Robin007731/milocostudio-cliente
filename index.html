@@ -24,14 +24,15 @@
         
         .btn-hero { background: transparent; color: var(--gold); border: 1px solid var(--gold); padding: 18px 45px; font-size: 0.9rem; font-weight: 600; text-transform: uppercase; letter-spacing: 3px; cursor: pointer; }
         .btn-next { width: 100%; padding: 18px; background: var(--gold); color: var(--bg); font-weight: 700; cursor: pointer; letter-spacing: 2px; text-transform: uppercase; border: none; border-radius: 8px; margin-top: 25px; }
-        .btn-next:disabled { background: #555; cursor: not-allowed; opacity: 0.5; }
+        .btn-next:disabled { background: #555; cursor: not-allowed; opacity: 0.5; color: #888; }
 
         .service-item { display: flex; justify-content: space-between; padding: 15px; background: rgba(255,255,255,0.03); border-radius: 8px; margin-bottom: 10px; cursor: pointer; border: 1px solid transparent; }
+        
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-top: 20px; }
-        .day { padding: 12px 0; font-size: 0.9rem; cursor: pointer; border-radius: 8px; background: rgba(0,0,0,0.1); text-align: center; }
+        .day { padding: 12px 0; font-size: 0.9rem; cursor: pointer; border-radius: 8px; background: rgba(0,0,0,0.1); text-align: center; position: relative; }
         .day.selected { background: var(--gold) !important; color: var(--bg) !important; font-weight: bold; }
+        .day.full { opacity: 0.2; pointer-events: none; text-decoration: line-through; }
 
-        /* SELECTOR DE HORA CORREGIDO */
         .clock-container { margin-top: 25px; background: rgba(0,0,0,0.2); padding: 20px; border-radius: 12px; }
         .time-display { font-size: 2.2rem; color: var(--gold); margin-bottom: 15px; text-align: center; }
         .clock-selectors { display: flex; justify-content: center; gap: 20px; }
@@ -109,7 +110,7 @@
     const db = getDatabase(app);
 
     let reserva = { nombre: "", tel: "", servicio: "", fecha: "", hora: "" };
-    let ocupados = [];
+    let ocupadosDelDia = [];
     let hSel = "", mSel = "";
 
     window.mostrar = (id) => {
@@ -121,11 +122,8 @@
     window.validarPaso1 = () => {
         reserva.nombre = document.getElementById('nombre').value;
         reserva.tel = document.getElementById('whatsapp').value;
-        if(reserva.nombre && reserva.tel) {
-            cargarServicios();
-        } else {
-            alert("Completa tus datos");
-        }
+        if(reserva.nombre && reserva.tel) cargarServicios();
+        else alert("Completa tus datos");
     };
 
     async function cargarServicios() {
@@ -144,21 +142,38 @@
         }
     }
 
-    function renderCalendar() {
+    async function renderCalendar() {
         const grid = document.getElementById('calendarGrid');
+        grid.innerHTML = "Cargando días...";
+        
+        // Obtener todas las reservas para marcar días llenos
+        const snapAll = await get(ref(db, 'reservas'));
+        const todasLasReservas = snapAll.exists() ? Object.values(snapAll.val()) : [];
+
         grid.innerHTML = "";
         const today = new Date();
+        
         for(let i=0; i<14; i++) {
             const d = new Date(); d.setDate(today.getDate() + i);
             const dStr = d.toISOString().split('T')[0];
+            
+            // Un día está lleno si tiene 26 turnos (de 08:00 a 20:30 cada 30 min)
+            const count = todasLasReservas.filter(r => r.fecha === dStr).length;
+            
             const el = document.createElement('div');
-            el.className = 'day'; el.innerText = d.getDate();
+            el.className = 'day' + (count >= 26 ? ' full' : ''); 
+            el.innerText = d.getDate();
+            
             el.onclick = async () => {
+                if(el.classList.contains('full')) return;
                 document.querySelectorAll('.day').forEach(x => x.classList.remove('selected'));
                 el.classList.add('selected');
                 reserva.fecha = dStr;
-                const snap = await get(query(ref(db,'reservas'), orderByChild('fecha'), equalTo(dStr)));
-                ocupados = snap.exists() ? Object.values(snap.val()).map(r => r.hora) : [];
+                
+                // Cargar horas ocupadas de ESTE día específico
+                const snapDay = await get(query(ref(db,'reservas'), orderByChild('fecha'), equalTo(dStr)));
+                ocupadosDelDia = snapDay.exists() ? Object.values(snapDay.val()).map(r => r.hora) : [];
+                
                 hSel = ""; mSel = ""; 
                 actualizarReloj();
             };
@@ -169,8 +184,7 @@
     function initReloj() {
         const ph = document.getElementById('pickHora');
         const pm = document.getElementById('pickMin');
-        
-        ph.innerHTML = ""; pm.innerHTML = ""; // Limpiar antes de crear
+        ph.innerHTML = ""; pm.innerHTML = ""; 
 
         for(let i=8; i<=20; i++) {
             const h = i.toString().padStart(2,'0');
@@ -178,7 +192,7 @@
             d.className='time-unit'; d.innerText=h; d.id=`h-${h}`;
             d.onclick = () => {
                 if(!d.classList.contains('occupied')) {
-                    hSel = h; mSel = ""; 
+                    hSel = h; mSel = ""; // Reset de minutos al cambiar hora
                     actualizarReloj();
                 }
             };
@@ -201,48 +215,50 @@
     function actualizarReloj() {
         document.querySelectorAll('.time-unit').forEach(el => el.classList.remove('selected', 'occupied'));
         
-        // Bloquear Horas llenas
+        // 1. Bloquear Horas si sus dos fracciones (00 y 30) están ocupadas
         document.querySelectorAll('[id^="h-"]').forEach(el => {
             const h = el.innerText;
-            const citasEnHora = ocupados.filter(t => t.startsWith(h + ":"));
-            if (citasEnHora.length >= 2) el.classList.add('occupied');
+            const ocupadosEnHora = ocupadosDelDia.filter(t => t.startsWith(h + ":"));
+            if (ocupadosEnHora.length >= 2) el.classList.add('occupied');
         });
 
-        // Marcar Hora seleccionada y bloquear minutos
+        // 2. Si hay hora elegida, mostrarla y bloquear los minutos ya tomados
         if(hSel) {
-            const elHora = document.getElementById(`h-${hSel}`);
-            if(elHora) elHora.classList.add('selected');
-            
+            document.getElementById(`h-${hSel}`).classList.add('selected');
             document.querySelectorAll('[id^="m-"]').forEach(el => {
                 const m = el.innerText;
-                if(ocupados.includes(`${hSel}:${m}`)) el.classList.add('occupied');
+                if(ocupadosDelDia.includes(`${hSel}:${m}`)) el.classList.add('occupied');
             });
         }
 
-        // Marcar Minuto seleccionado
-        if(mSel) {
-            const elMin = document.getElementById(`m-${mSel}`);
-            if(elMin) elMin.classList.add('selected');
-        }
+        if(mSel) document.getElementById(`m-${mSel}`).classList.add('selected');
 
-        const ok = hSel && mSel;
-        document.getElementById('relojTxt').innerText = ok ? `${hSel}:${mSel}` : (hSel ? `${hSel}:--` : "--:--");
-        document.getElementById('btnConfirmar').disabled = !ok;
+        const listo = hSel && mSel;
+        document.getElementById('relojTxt').innerText = listo ? `${hSel}:${mSel}` : (hSel ? `${hSel}:--` : "--:--");
+        document.getElementById('btnConfirmar').disabled = !listo;
     }
 
     window.confirmarReserva = async () => {
         reserva.hora = `${hSel}:${mSel}`;
+        
+        // Verificación de último momento (concurrencia)
         const snap = await get(query(ref(db,'reservas'), orderByChild('fecha'), equalTo(reserva.fecha)));
-        if(snap.exists() && Object.values(snap.val()).some(r => r.hora === reserva.hora)) {
-            alert("Este horario se ocupó. Elige otro."); location.reload(); return;
+        const yaOcupado = snap.exists() && Object.values(snap.val()).some(r => r.hora === reserva.hora);
+        
+        if(yaOcupado) {
+            alert("¡Ups! Alguien acaba de reservar esa hora. Por favor elige otra.");
+            location.reload();
+            return;
         }
+
         await push(ref(db, 'reservas'), reserva);
-        document.getElementById('mText').innerText = `Turno confirmado para el ${reserva.fecha} a las ${reserva.hora}hs.`;
+        document.getElementById('mText').innerText = `Turno agendado: ${reserva.fecha} a las ${reserva.hora}hs.`;
         document.getElementById('custom-modal').style.display = 'flex';
-        window.open(`https://wa.me/59898324329?text=Reserva:%20${reserva.nombre}%20-%20${reserva.servicio}%20-%20${reserva.fecha}%20${reserva.hora}`);
+        
+        const msg = `Reserva confirmada: ${reserva.nombre} - ${reserva.servicio} - ${reserva.fecha} ${reserva.hora}hs.`;
+        window.open(`https://wa.me/59898324329?text=${encodeURIComponent(msg)}`);
     };
 
-    // Inicializar reloj al cargar
     initReloj();
 </script>
 </body>
