@@ -14,19 +14,18 @@
 
         body { margin: 0; background: #000; color: var(--text); font-family: 'Montserrat', sans-serif; min-height: 100vh; overflow-x: hidden; }
         .bg-fixed { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.5)), url('199797.jpg'); background-size: cover; background-position: center; z-index: -1; transition: filter 0.5s; }
-        
         header { position: fixed; top: 0; left: 0; width: 100%; text-align: center; padding: 40px 0; z-index: 1001; }
         header h1 { font-family: 'Playfair Display', serif; font-size: 2.2rem; color: var(--gold); margin: 0; letter-spacing: 6px; text-transform: uppercase; text-shadow: 2px 2px 15px rgba(0,0,0,0.8); }
         header p { font-size: 0.7rem; letter-spacing: 5px; opacity: 0.9; margin-top: 5px; }
 
         .content-wrapper { padding-top: 160px; padding-bottom: 50px; position: relative; z-index: 10; }
         .section { display: none; max-width: 600px; margin: 0 auto 40px; padding: 0 20px; box-sizing: border-box; }
-        .active { display: block; animation: fadeIn 0.8s ease; }
+        .active { display: block; animation: fadeIn 0.5s ease; }
         #inicio.active { display: flex; height: 60vh; flex-direction: column; justify-content: center; align-items: center; }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        .form { background: var(--card); padding: 35px; border-radius: 12px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .form { background: var(--card); padding: 35px; border-radius: 12px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
         input { width: 100%; padding: 15px; margin-top: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: var(--input-bg); color: white; box-sizing: border-box; font-size: 16px; }
         
         .btn-hero { background: rgba(0,0,0,0.5); color: #fff; border: 2px solid #fff; padding: 20px 50px; font-size: 1rem; font-weight: 700; text-transform: uppercase; letter-spacing: 4px; cursor: pointer; border-radius: 5px; }
@@ -38,7 +37,7 @@
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
         .day { padding: 10px 0; font-size: 0.9rem; cursor: pointer; border-radius: 5px; }
         .day:hover:not(.disabled) { background: rgba(255,255,255,0.2); }
-        .day.disabled { opacity: 0.2; cursor: not-allowed; text-decoration: line-through; }
+        .day.disabled { opacity: 0.15; cursor: not-allowed; text-decoration: line-through; }
         .day.selected { background: #fff !important; color: #000 !important; font-weight: bold; }
         
         .clock-container { text-align: center; margin-top: 20px; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; }
@@ -47,10 +46,8 @@
         .scroll-picker { height: 120px; overflow-y: auto; width: 85px; background: rgba(0,0,0,0.3); border-radius: 5px; scrollbar-width: none; }
         .time-unit { padding: 12px 0; cursor: pointer; opacity: 0.4; transition: 0.2s; }
         .time-unit.selected { opacity: 1; font-weight: bold; background: rgba(255,255,255,0.2); }
-        
-        /* ESTADOS DE HORARIO */
-        .time-unit.occupied { color: var(--red-error); text-decoration: line-through; opacity: 0.4; cursor: not-allowed; pointer-events: none; }
-        .time-unit.expired { color: #888; opacity: 0.2; cursor: not-allowed; pointer-events: none; }
+        .time-unit.occupied { color: var(--red-error); text-decoration: line-through; opacity: 0.3; pointer-events: none; }
+        .time-unit.expired { color: #888; opacity: 0.15; pointer-events: none; }
 
         .category-title { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: #fff; margin: 25px 0 10px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px; }
         .service-item { display: flex; justify-content: space-between; padding: 15px 5px; cursor: pointer; border-radius: 6px; }
@@ -139,7 +136,7 @@
         document.getElementById('mainBg').style.filter = (id === 'inicio') ? "none" : "blur(8px) brightness(0.4)";
         if(id === 'agenda') {
             renderCalendar();
-            initReloj();
+            initReloj(); 
         }
     };
 
@@ -236,62 +233,50 @@
 
         document.querySelectorAll('.time-unit').forEach(el => el.classList.remove('selected','occupied','expired'));
         
-        // Validar Horas
         for(let i=8; i<=20; i++) {
             const hStr = i < 10 ? '0'+i : i.toString();
             const elH = document.getElementById(`h-${hStr}`);
             if(!elH) continue;
-            
             if(esHoy && i < ahora.getHours()) elH.classList.add('expired');
-            
-            const turnosOcupadosEnHora = ocupados.filter(t => t.startsWith(`${hStr}:`)).length;
-            if(turnosOcupadosEnHora >= 2) elH.classList.add('occupied');
+            if(ocupados.filter(t => t.startsWith(`${hStr}:`)).length >= 2) elH.classList.add('occupied');
         }
 
-        // Validar Minutos
         if(hSel) {
             document.getElementById(`h-${hSel}`).classList.add('selected');
             ['00','30'].forEach(m => {
                 const elM = document.getElementById(`m-${m}`);
                 if(!elM) return;
-                
                 const esPasado = esHoy && (parseInt(hSel) < ahora.getHours() || (parseInt(hSel) === ahora.getHours() && parseInt(m) <= ahora.getMinutes()));
-                
                 if(esPasado) elM.classList.add('expired');
                 if(ocupados.includes(`${hSel}:${m}`)) elM.classList.add('occupied');
             });
         }
 
-        if(mSel) {
-            const elM = document.getElementById(`m-${mSel}`);
-            if(elM) elM.classList.add('selected');
-        }
+        if(mSel) document.getElementById(`m-${mSel}`).classList.add('selected');
         
         document.getElementById('relojTxt').innerText = hSel && mSel ? `${hSel}:${mSel}` : (hSel ? `${hSel}:--` : "--:--");
         
-        // Validación final para botón
-        const selOcupado = hSel && mSel && ocupados.includes(`${hSel}:${mSel}`);
-        const selPasado = hSel && mSel && esHoy && (parseInt(hSel) < ahora.getHours() || (parseInt(hSel) === ahora.getHours() && parseInt(mSel) <= ahora.getMinutes()));
-        
-        document.getElementById('btnConfirmar').disabled = !(hSel && mSel && reserva.fecha) || selOcupado || selPasado;
+        // CORRECCIÓN: El botón se activa solo si la combinación elegida no es ocupada ni expirada
+        const finalTime = `${hSel}:${mSel}`;
+        const esOcupado = ocupados.includes(finalTime);
+        const esPasado = esHoy && (parseInt(hSel) < ahora.getHours() || (parseInt(hSel) === ahora.getHours() && parseInt(mSel) <= ahora.getMinutes()));
+
+        document.getElementById('btnConfirmar').disabled = !(hSel && mSel && reserva.fecha) || esOcupado || esPasado;
     }
 
     window.confirmarReserva = async () => {
         const fullTime = `${hSel}:${mSel}`;
-        // Re-verificar ocupación justo antes de guardar
         const snap = await get(query(ref(db,'reservas'), orderByChild('fecha'), equalTo(reserva.fecha)));
         if(snap.exists() && Object.values(snap.val()).some(r => r.hora === fullTime)) {
-            alert("Este horario se acaba de ocupar. Elige otro.");
-            hSel = ""; mSel = ""; actualizarReloj();
+            alert("Este horario se acaba de ocupar.");
             return;
         }
 
         reserva.hora = fullTime;
         await push(ref(db, 'reservas'), reserva);
-        const waMsg = `*MILOCOSTUDIO*%0A*Servicio:* ${reserva.servicio}%0A*Fecha:* ${reserva.fecha}%0A*Hora:* ${reserva.hora}%0A*Nombre:* ${reserva.nombre}`;
-        window.open(`https://wa.me/59899518324?text=${waMsg}`);
+        window.open(`https://wa.me/59899518324?text=*MILOCOSTUDIO*%0A*Servicio:* ${reserva.servicio}%0A*Fecha:* ${reserva.fecha}%0A*Hora:* ${reserva.hora}%0A*Nombre:* ${reserva.nombre}`);
         document.getElementById('mTitle').innerText = "¡RESERVA EXITOSA!";
-        document.getElementById('mText').innerText = "Tu turno ha sido agendado. Te esperamos.";
+        document.getElementById('mText').innerText = "Tu turno ha sido agendado.";
         document.getElementById('custom-modal').style.display = 'flex';
     };
 </script>
