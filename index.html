@@ -188,13 +188,49 @@
         document.getElementById('btnConfirmar').disabled = !esValido;
     }
 
-    window.confirmarReserva = async () => {
-        reserva.hora = `${hSel}:${mSel}`;
-        await push(ref(db, 'reservas'), reserva);
-        window.open(`https://wa.me/59899518324?text=RESERVA: ${reserva.servicio} - ${reserva.fecha} ${reserva.hora}`);
-        document.getElementById('mTitle').innerText = "¡LISTO!";
-        document.getElementById('custom-modal').style.display = 'flex';
+  window.confirmarReserva = async () => {
+        const fullTime = `${hSel}:${mSel}`;
+        
+        // Verificación de seguridad de último segundo
+        const snap = await get(query(ref(db, 'reservas'), orderByChild('fecha'), equalTo(reserva.fecha)));
+        if (snap.exists() && Object.values(snap.val()).some(r => r.hora === fullTime)) {
+            alert("Lo sentimos, este horario se acaba de ocupar. Por favor elige otro.");
+            hSel = ""; mSel = ""; actualizarReloj();
+            return;
+        }
+
+        reserva.hora = fullTime;
+
+        try {
+            // 1. Guardar en Base de Datos
+            await push(ref(db, 'reservas'), reserva);
+
+            // 2. Construir Mensaje de WhatsApp detallado
+            const mensajeBarbero = 
+                `*NUEVA RESERVA - MILOCOSTUDIO*%0A` +
+                `--------------------------------%0A` +
+                `👤 *Cliente:* ${reserva.nombre}%0A` +
+                `📞 *WhatsApp:* ${reserva.tel}%0A` +
+                `✂️ *Servicio:* ${reserva.servicio}%0A` +
+                `📅 *Fecha:* ${reserva.fecha}%0A` +
+                `⏰ *Hora:* ${reserva.hora} hs%0A` +
+                `--------------------------------%0A` +
+                `_Enviado desde el sistema de reservas._`;
+
+            // 3. Abrir WhatsApp con el mensaje completo
+            window.open(`https://wa.me/59899518324?text=${mensajeBarbero}`);
+
+            // 4. Mostrar confirmación en pantalla
+            document.getElementById('mTitle').innerText = "¡RESERVA CONFIRMADA!";
+            document.getElementById('mText').innerText = `Gracias ${reserva.nombre}, tu cita para ${reserva.servicio} el día ${reserva.fecha} a las ${reserva.hora} ha sido registrada con éxito.`;
+            document.getElementById('custom-modal').style.display = 'flex';
+
+        } catch (error) {
+            console.error("Error al reservar:", error);
+            alert("Hubo un problema al guardar tu reserva. Inténtalo de nuevo.");
+        }
     };
 </script>
 </body>
 </html>
+
