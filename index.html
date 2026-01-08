@@ -36,7 +36,7 @@
         .calendar-card { background: var(--input-bg); border-radius: 10px; padding: 15px; margin-top: 15px; }
         .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
-        .day { padding: 10px 0; font-size: 0.9rem; cursor: pointer; border-radius: 5px; transition: 0.2s; }
+        .day { padding: 10px 0; font-size: 0.9rem; cursor: pointer; border-radius: 5px; }
         .day:hover:not(.disabled) { background: rgba(255,255,255,0.2); }
         .day.disabled { opacity: 0.2; cursor: not-allowed; text-decoration: line-through; }
         .day.selected { background: #fff !important; color: #000 !important; font-weight: bold; }
@@ -48,17 +48,14 @@
         .time-unit { padding: 12px 0; cursor: pointer; opacity: 0.4; transition: 0.2s; }
         .time-unit.selected { opacity: 1; font-weight: bold; background: rgba(255,255,255,0.2); }
         
-        .time-unit.occupied { color: var(--red-error); text-decoration: line-through; opacity: 0.3; cursor: not-allowed; pointer-events: none; }
+        /* ESTADOS DE HORARIO */
+        .time-unit.occupied { color: var(--red-error); text-decoration: line-through; opacity: 0.4; cursor: not-allowed; pointer-events: none; }
         .time-unit.expired { color: #888; opacity: 0.2; cursor: not-allowed; pointer-events: none; }
 
         .category-title { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: #fff; margin: 25px 0 10px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px; }
         .service-item { display: flex; justify-content: space-between; padding: 15px 5px; cursor: pointer; border-radius: 6px; }
         .service-item:hover { background: rgba(255,255,255,0.1); }
         .service-dots { flex-grow: 1; border-bottom: 1px dotted rgba(255,255,255,0.3); margin: 0 10px; height: 18px; }
-
-        .info-footer { max-width: 600px; margin: 40px auto; padding: 25px; background: rgba(0,0,0,0.4); border-radius: 15px; text-align: center; }
-        .info-link { display: flex; align-items: center; justify-content: center; gap: 12px; color: #fff; text-decoration: none; margin: 15px 0; font-size: 0.85rem; }
-        .info-link img { width: 20px; filter: invert(1); }
 
         #custom-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--overlay); display: none; justify-content: center; align-items: center; z-index: 9999; backdrop-filter: blur(10px); }
         .modal-content { background: #333; padding: 40px; border-radius: 15px; max-width: 400px; width: 85%; text-align: center; border: 1px solid #fff; }
@@ -239,20 +236,27 @@
 
         document.querySelectorAll('.time-unit').forEach(el => el.classList.remove('selected','occupied','expired'));
         
+        // Validar Horas
         for(let i=8; i<=20; i++) {
             const hStr = i < 10 ? '0'+i : i.toString();
             const elH = document.getElementById(`h-${hStr}`);
             if(!elH) continue;
+            
             if(esHoy && i < ahora.getHours()) elH.classList.add('expired');
-            if(ocupados.filter(t => t.startsWith(`${hStr}:`)).length >= 2) elH.classList.add('occupied');
+            
+            const turnosOcupadosEnHora = ocupados.filter(t => t.startsWith(`${hStr}:`)).length;
+            if(turnosOcupadosEnHora >= 2) elH.classList.add('occupied');
         }
 
+        // Validar Minutos
         if(hSel) {
             document.getElementById(`h-${hSel}`).classList.add('selected');
             ['00','30'].forEach(m => {
                 const elM = document.getElementById(`m-${m}`);
                 if(!elM) return;
+                
                 const esPasado = esHoy && (parseInt(hSel) < ahora.getHours() || (parseInt(hSel) === ahora.getHours() && parseInt(m) <= ahora.getMinutes()));
+                
                 if(esPasado) elM.classList.add('expired');
                 if(ocupados.includes(`${hSel}:${m}`)) elM.classList.add('occupied');
             });
@@ -265,27 +269,29 @@
         
         document.getElementById('relojTxt').innerText = hSel && mSel ? `${hSel}:${mSel}` : (hSel ? `${hSel}:--` : "--:--");
         
-        // El botón se activa solo si hay Fecha, Hora y Minuto seleccionados y NO están ocupados o expirados
-        const esValido = hSel && mSel && reserva.fecha;
-        const estaBloqueado = document.querySelector(`.time-unit.selected.occupied`) || document.querySelector(`.time-unit.selected.expired`);
+        // Validación final para botón
+        const selOcupado = hSel && mSel && ocupados.includes(`${hSel}:${mSel}`);
+        const selPasado = hSel && mSel && esHoy && (parseInt(hSel) < ahora.getHours() || (parseInt(hSel) === ahora.getHours() && parseInt(mSel) <= ahora.getMinutes()));
         
-        document.getElementById('btnConfirmar').disabled = !esValido || estaBloqueado;
+        document.getElementById('btnConfirmar').disabled = !(hSel && mSel && reserva.fecha) || selOcupado || selPasado;
     }
 
     window.confirmarReserva = async () => {
         const fullTime = `${hSel}:${mSel}`;
-        const check = await get(query(ref(db,'reservas'), orderByChild('fecha'), equalTo(reserva.fecha)));
-        if(check.exists() && Object.values(check.val()).some(r => r.hora === fullTime)) {
-            alert("Este horario se acaba de ocupar.");
-            renderCalendar();
+        // Re-verificar ocupación justo antes de guardar
+        const snap = await get(query(ref(db,'reservas'), orderByChild('fecha'), equalTo(reserva.fecha)));
+        if(snap.exists() && Object.values(snap.val()).some(r => r.hora === fullTime)) {
+            alert("Este horario se acaba de ocupar. Elige otro.");
+            hSel = ""; mSel = ""; actualizarReloj();
             return;
         }
 
         reserva.hora = fullTime;
         await push(ref(db, 'reservas'), reserva);
-        window.open(`https://wa.me/59899518324?text=*MILOCOSTUDIO*%0A*Servicio:* ${reserva.servicio}%0A*Fecha:* ${reserva.fecha}%0A*Hora:* ${reserva.hora}%0A*Nombre:* ${reserva.nombre}`);
+        const waMsg = `*MILOCOSTUDIO*%0A*Servicio:* ${reserva.servicio}%0A*Fecha:* ${reserva.fecha}%0A*Hora:* ${reserva.hora}%0A*Nombre:* ${reserva.nombre}`;
+        window.open(`https://wa.me/59899518324?text=${waMsg}`);
         document.getElementById('mTitle').innerText = "¡RESERVA EXITOSA!";
-        document.getElementById('mText').innerText = "Tu turno ha sido agendado.";
+        document.getElementById('mText').innerText = "Tu turno ha sido agendado. Te esperamos.";
         document.getElementById('custom-modal').style.display = 'flex';
     };
 </script>
