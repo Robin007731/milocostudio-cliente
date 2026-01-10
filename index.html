@@ -33,6 +33,14 @@
         .btn-next { width: 100%; padding: 18px; background: #fff; color: #000; font-weight: 700; cursor: pointer; letter-spacing: 2px; text-transform: uppercase; border: none; border-radius: 8px; margin-top: 25px; transition: 0.3s; }
         .btn-next:disabled { background: #444; color: #888; cursor: not-allowed; opacity: 0.6; }
 
+        .service-item { display: flex; justify-content: space-between; padding: 15px 5px; cursor: pointer; border-radius: 6px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .service-item:hover { background: rgba(255,255,255,0.1); }
+        
+        .category-title { 
+            font-size: 0.8rem; color: #fff; letter-spacing: 3px; margin: 25px 0 10px 0; 
+            border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 5px; text-transform: uppercase; opacity: 0.7;
+        }
+
         .calendar-card { background: var(--input-bg); border-radius: 10px; padding: 15px; margin-top: 15px; }
         .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
@@ -49,20 +57,6 @@
         .time-unit.selected { opacity: 1; font-weight: bold; background: rgba(255,255,255,0.2); }
         .time-unit.occupied { color: var(--red-error); text-decoration: line-through; opacity: 0.3; pointer-events: none; }
         .time-unit.expired { color: #888; opacity: 0.15; pointer-events: none; }
-
-        .service-item { display: flex; justify-content: space-between; padding: 15px 5px; cursor: pointer; border-radius: 6px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .service-item:hover { background: rgba(255,255,255,0.1); }
-        
-        /* Estilos para las secciones de servicios */
-        .category-title { 
-            font-size: 0.9rem; 
-            color: #ccc; 
-            letter-spacing: 3px; 
-            margin: 25px 0 10px 0; 
-            border-bottom: 1px solid rgba(255,255,255,0.2);
-            padding-bottom: 5px;
-            text-transform: uppercase;
-        }
 
         #custom-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--overlay); display: none; justify-content: center; align-items: center; z-index: 9999; backdrop-filter: blur(10px); }
         .modal-content { background: #333; padding: 40px; border-radius: 15px; max-width: 400px; width: 85%; text-align: center; border: 1px solid #fff; }
@@ -123,7 +117,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, get, push, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, onValue, get, push, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyCb47oi5HqrgrqIc1jwukF-igINVSOm5Pk",
@@ -140,33 +134,20 @@
     let hSel = "", mSel = "";
     let currentMonth = new Date();
 
-    window.mostrar = id => {
-        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        if(id === 'agenda') { renderCalendar(); initReloj(); }
-    };
-
-    window.validarPaso1 = () => {
-        reserva.nombre = document.getElementById('nombre').value;
-        reserva.tel = document.getElementById('whatsapp').value;
-        if(reserva.nombre && reserva.tel) cargarServicios();
-        else alert("Completa tus datos");
-    };
-
-    async function cargarServicios() {
-        mostrar('servicios');
-        const snap = await get(ref(db, 'catalogo'));
+    // ESCUCHA EN TIEMPO REAL DEL CATÁLOGO
+    onValue(ref(db, 'catalogo'), snap => {
         const container = document.getElementById('listaServicios');
         container.innerHTML = "<h3 style='text-align:center; letter-spacing: 5px;'>SERVICIOS</h3>";
         
         if(snap.exists()){
             const data = snap.val();
-            // Definimos las categorías que queremos mostrar
-            const categorias = ["CORTES", "BARBA", "DETALLES", "COLORES"];
+            const servicios = Object.values(data);
             
-            categorias.forEach(cat => {
-                // Filtramos los servicios que pertenecen a esta categoría (insensible a mayúsculas)
-                const filtrados = Object.values(data).filter(s => s.categoria && s.categoria.toUpperCase() === cat);
+            // Extraer todas las categorías únicas que el admin haya creado
+            const categorias = [...new Set(servicios.map(s => s.categoria || "OTROS"))];
+            
+            categorias.sort().forEach(cat => {
+                const filtrados = servicios.filter(s => (s.categoria || "OTROS") === cat);
                 
                 if(filtrados.length > 0) {
                     const catTitle = document.createElement('div');
@@ -184,7 +165,20 @@
                 }
             });
         }
-    }
+    });
+
+    window.mostrar = id => {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        if(id === 'agenda') { renderCalendar(); initReloj(); }
+    };
+
+    window.validarPaso1 = () => {
+        reserva.nombre = document.getElementById('nombre').value;
+        reserva.tel = document.getElementById('whatsapp').value;
+        if(reserva.nombre && reserva.tel) mostrar('servicios');
+        else alert("Completa tus datos");
+    };
 
     function renderCalendar() {
         const grid = document.getElementById('calendarGrid');
@@ -193,7 +187,6 @@
         const today = new Date(); today.setHours(0,0,0,0);
         
         document.getElementById('monthDisplay').innerText = new Intl.DateTimeFormat('es', {month:'long', year:'numeric'}).format(currentMonth);
-        
         const firstDay = new Date(year, month, 1).getDay();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
 
@@ -258,21 +251,14 @@
         }
 
         document.getElementById('relojTxt').innerText = hSel && mSel ? `${hSel}:${mSel}` : (hSel ? `${hSel}:--` : "--:--");
-        const esValido = hSel && mSel && !ocupados.includes(`${hSel}:${ms}`);
+        const esValido = hSel && mSel && !ocupados.includes(`${hSel}:${mSel}`);
         document.getElementById('btnConfirmar').disabled = !esValido;
     }
 
     window.confirmarReserva = async () => {
         reserva.hora = `${hSel}:${mSel}`;
         await push(ref(db, 'reservas'), reserva);
-        
-        const msg = `*NUEVA RESERVA - MILOCOSTUDIO*%0A` +
-                    `👤 *Cliente:* ${reserva.nombre}%0A` +
-                    `📞 *WhatsApp:* ${reserva.tel}%0A` +
-                    `✂️ *Servicio:* ${reserva.servicio}%0A` +
-                    `📅 *Fecha:* ${reserva.fecha}%0A` +
-                    `⏰ *Hora:* ${reserva.hora} hs`;
-
+        const msg = `*NUEVA RESERVA - MILOCOSTUDIO*%0A👤 *Cliente:* ${reserva.nombre}%0A📞 *WhatsApp:* ${reserva.tel}%0A✂️ *Servicio:* ${reserva.servicio}%0A📅 *Fecha:* ${reserva.fecha}%0A⏰ *Hora:* ${reserva.hora} hs`;
         window.open(`https://wa.me/59899518324?text=${msg}`);
         document.getElementById('mTitle').innerText = "¡RESERVA EXITOSA!";
         document.getElementById('mText').innerText = `Turno agendado para el ${reserva.fecha} a las ${reserva.hora}.`;
