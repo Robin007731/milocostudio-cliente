@@ -52,6 +52,17 @@
 
         .service-item { display: flex; justify-content: space-between; padding: 15px 5px; cursor: pointer; border-radius: 6px; border-bottom: 1px solid rgba(255,255,255,0.05); }
         .service-item:hover { background: rgba(255,255,255,0.1); }
+        
+        /* Estilos para las secciones de servicios */
+        .category-title { 
+            font-size: 0.9rem; 
+            color: #ccc; 
+            letter-spacing: 3px; 
+            margin: 25px 0 10px 0; 
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            padding-bottom: 5px;
+            text-transform: uppercase;
+        }
 
         #custom-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--overlay); display: none; justify-content: center; align-items: center; z-index: 9999; backdrop-filter: blur(10px); }
         .modal-content { background: #333; padding: 40px; border-radius: 15px; max-width: 400px; width: 85%; text-align: center; border: 1px solid #fff; }
@@ -146,14 +157,31 @@
         mostrar('servicios');
         const snap = await get(ref(db, 'catalogo'));
         const container = document.getElementById('listaServicios');
-        container.innerHTML = "<h3>SERVICIOS</h3>";
+        container.innerHTML = "<h3 style='text-align:center; letter-spacing: 5px;'>SERVICIOS</h3>";
+        
         if(snap.exists()){
-            Object.values(snap.val()).forEach(s => {
-                const item = document.createElement('div');
-                item.className = 'service-item';
-                item.innerHTML = `<span>${s.nombre}</span><span>$${s.precio}</span>`;
-                item.onclick = () => { reserva.servicio = s.nombre; mostrar('agenda'); };
-                container.appendChild(item);
+            const data = snap.val();
+            // Definimos las categorías que queremos mostrar
+            const categorias = ["CORTES", "BARBA", "DETALLES", "COLORES"];
+            
+            categorias.forEach(cat => {
+                // Filtramos los servicios que pertenecen a esta categoría (insensible a mayúsculas)
+                const filtrados = Object.values(data).filter(s => s.categoria && s.categoria.toUpperCase() === cat);
+                
+                if(filtrados.length > 0) {
+                    const catTitle = document.createElement('div');
+                    catTitle.className = 'category-title';
+                    catTitle.innerText = cat;
+                    container.appendChild(catTitle);
+
+                    filtrados.forEach(s => {
+                        const item = document.createElement('div');
+                        item.className = 'service-item';
+                        item.innerHTML = `<span>${s.nombre}</span><span>$${s.precio}</span>`;
+                        item.onclick = () => { reserva.servicio = s.nombre; mostrar('agenda'); };
+                        container.appendChild(item);
+                    });
+                }
             });
         }
     }
@@ -230,7 +258,7 @@
         }
 
         document.getElementById('relojTxt').innerText = hSel && mSel ? `${hSel}:${mSel}` : (hSel ? `${hSel}:--` : "--:--");
-        const esValido = hSel && mSel && !ocupados.includes(`${hSel}:${mSel}`);
+        const esValido = hSel && mSel && !ocupados.includes(`${hSel}:${ms}`);
         document.getElementById('btnConfirmar').disabled = !esValido;
     }
 
