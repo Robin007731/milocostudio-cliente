@@ -8,127 +8,310 @@
     <style>
         :root { 
             --gold: #ffffff; --card: rgba(30, 30, 30, 0.95); --text: #ffffff;
-            --red-alert: #ff4b4b;
+            --input-bg: rgba(50, 50, 50, 0.8); --overlay: rgba(0,0,0,0.9);
+            --red-error: #ff6b6b; --green: #25d366;
         }
 
         body { 
             margin: 0; background: #000; color: var(--text); 
             font-family: 'Montserrat', sans-serif; min-height: 100vh; 
+            overflow-x: hidden; -webkit-tap-highlight-color: transparent;
         }
 
-        /* --- PANTALLA DE CIERRE FINAL --- */
+        /* --- PANTALLA DE CIERRE (BLOQUEO) --- */
         #bloqueo-app {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; color: white; z-index: 10000;
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #000; color: white; z-index: 100000;
             display: none; flex-direction: column; justify-content: center;
             align-items: center; text-align: center; padding: 30px; box-sizing: border-box;
         }
 
-        /* --- BANNER DE CUENTA REGRESIVA INFERIOR --- */
-        .footer-counter {
+        /* --- BANNER DE CUENTA REGRESIVA --- */
+        .footer-admin {
             position: fixed; bottom: 0; left: 0; width: 100%;
-            background: rgba(20, 20, 20, 0.95);
-            border-top: 2px solid var(--red-alert);
-            padding: 15px 0;
-            text-align: center;
-            z-index: 999;
+            background: rgba(15, 15, 15, 0.95);
+            border-top: 2px solid var(--red-error);
+            padding: 15px 0; text-align: center; z-index: 9999;
             backdrop-filter: blur(10px);
         }
-        .footer-counter p {
-            margin: 0; font-size: 0.8rem; letter-spacing: 1.5px; font-weight: 400;
-            color: #ccc;
-        }
-        #timer { 
-            display: block; font-size: 1.4rem; font-weight: 700; 
-            color: var(--red-alert); margin-top: 5px; font-family: monospace;
-        }
+        .footer-admin p { margin: 0; font-size: 0.7rem; letter-spacing: 2px; color: #999; text-transform: uppercase; }
+        #timer-db { display: block; font-size: 1.3rem; font-weight: 700; color: var(--red-error); font-family: monospace; margin-top: 4px; }
 
+        /* Estilos originales preservados */
         .bg-fixed { 
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.7)), url('199797.jpg'); 
+            background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.6)), url('199797.jpg'); 
             background-size: cover; background-position: center; z-index: -1; 
         }
         
-        header { text-align: center; padding: 50px 0; }
-        header h1 { font-family: 'Playfair Display', serif; font-size: 2rem; color: var(--gold); margin: 0; letter-spacing: 6px; text-transform: uppercase; }
+        header { position: fixed; top: 0; left: 0; width: 100%; text-align: center; padding: 30px 0; z-index: 1001; }
+        header h1 { font-family: 'Playfair Display', serif; font-size: 1.8rem; color: var(--gold); margin: 0; letter-spacing: 5px; text-transform: uppercase; }
+        header p { font-size: 0.6rem; letter-spacing: 4px; opacity: 0.8; margin-top: 5px; }
 
-        .content-wrapper { padding-bottom: 120px; width: 100%; }
-        .section { display: none; max-width: 450px; margin: 0 auto; padding: 0 20px; }
-        .active { display: block; }
+        .content-wrapper { padding-top: 140px; padding-bottom: 100px; position: relative; z-index: 10; width: 100%; }
+        .section { display: none; max-width: 500px; margin: 0 auto; padding: 0 20px; box-sizing: border-box; }
+        .active { display: block; animation: fadeIn 0.4s ease-out; }
+        #inicio.active { display: flex; height: 50vh; flex-direction: column; justify-content: center; align-items: center; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .form { background: var(--card); padding: 25px; border-radius: 15px; backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.1); }
+        input { width: 100%; padding: 15px; margin-top: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: var(--input-bg); color: white; box-sizing: border-box; font-size: 16px; outline: none; }
+        .btn-hero { background: transparent; color: #fff; border: 2px solid #fff; padding: 18px 40px; font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 3px; cursor: pointer; border-radius: 5px; transition: 0.3s; }
+        .btn-next { width: 100%; padding: 18px; background: #fff; color: #000; font-weight: 700; cursor: pointer; letter-spacing: 2px; text-transform: uppercase; border: none; border-radius: 10px; margin-top: 20px; }
         
-        .form { background: var(--card); padding: 30px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); }
-        .btn-hero { background: none; color: #fff; border: 2px solid #fff; padding: 20px 50px; font-weight: 700; cursor: pointer; text-transform: uppercase; letter-spacing: 2px; }
+        .service-item { display: flex; justify-content: space-between; padding: 18px 10px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.1); align-items: center; }
+        .category-title { font-size: 0.7rem; color: #aaa; letter-spacing: 2px; margin: 20px 0 5px 0; text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px; }
+
+        .calendar-card { background: rgba(0,0,0,0.2); border-radius: 10px; padding: 10px; margin-top: 15px; }
+        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 0 10px; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; }
+        .day { padding: 12px 0; font-size: 0.85rem; cursor: pointer; border-radius: 8px; }
+        .day.disabled { opacity: 0.1; pointer-events: none; }
+        .day.selected { background: #fff !important; color: #000 !important; font-weight: bold; }
+        
+        .clock-container { margin-top: 20px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 15px; }
+        .time-display { font-size: 2rem; margin-bottom: 15px; font-weight: 300; text-align: center; }
+        .scroll-picker { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-height: 200px; overflow-y: auto; }
+        .time-unit { padding: 12px 5px; text-align: center; background: rgba(255,255,255,0.05); border-radius: 8px; cursor: pointer; font-size: 0.9rem; border: 1px solid rgba(255,255,255,0.1); }
+        .time-unit.selected { background: #fff; color: #000; font-weight: bold; }
+        .time-unit.occupied { background: rgba(255, 107, 107, 0.15) !important; color: var(--red-error) !important; text-decoration: line-through; pointer-events: none; }
+
+        #custom-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--overlay); display: none; justify-content: center; align-items: center; z-index: 9999; backdrop-filter: blur(10px); }
+        .modal-content { background: #222; padding: 30px; border-radius: 20px; max-width: 320px; width: 85%; text-align: center; border: 1px solid rgba(255,255,255,0.2); }
     </style>
 </head>
 <body>
 
 <div id="bloqueo-app">
-    <h2 style="font-family: 'Playfair Display', serif; color: var(--red-alert); margin-bottom: 20px;">ACCESO RESTRINGIDO</h2>
-    <p style="font-size: 1.1rem; line-height: 1.6; max-width: 400px; font-weight: 300;">
-        La extensión de su base de datos ha caducado. 
-        <br><br>
-        <strong>Contactese con su desarrollador para ajustar su base de datos a su medida.</strong>
-    </p>
+    <div style="border: 1px solid var(--red-error); padding: 30px; border-radius: 20px; background: rgba(255,0,0,0.05);">
+        <h2 style="font-family: 'Playfair Display', serif; color: var(--red-error); margin-bottom: 15px;">SISTEMA SUSPENDIDO</h2>
+        <p style="font-size: 0.95rem; line-height: 1.6; opacity: 0.9;">
+            Contactese con su desarrollador para ajustar su base de datos a su medida.
+        </p>
+    </div>
 </div>
 
 <div class="bg-fixed"></div>
 
-<header>
+<header id="header-main">
     <h1>MILOCOSTUDIO</h1>
+    <p>STUDIO PRIVADO</p>
 </header>
 
-<div class="content-wrapper">
-    <div class="section active" id="inicio" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 30vh;">
+<div class="content-wrapper" id="app-body">
+    <div class="section active" id="inicio">
         <button class="btn-hero" onclick="mostrar('datos')">Reservar Turno</button>
     </div>
 
     <div class="section" id="datos">
         <div class="form">
-            <h3 style="text-align:center; margin-bottom: 20px;">INGRESE SUS DATOS</h3>
-            <button style="width:100%; padding:15px; background:white; color:black; border:none; font-weight:700;">SIGUIENTE</button>
+            <h3 style="text-align:center; letter-spacing: 3px; font-weight: 400;">TUS DATOS</h3>
+            <input id="nombre" type="text" placeholder="Nombre completo">
+            <input id="whatsapp" type="tel" placeholder="WhatsApp (Ej: 099123456)">
+            <button class="btn-next" onclick="validarPaso1()">Continuar</button>
+        </div>
+    </div>
+
+    <div class="section" id="servicios">
+        <div class="form">
+            <div id="listaServicios"></div>
+        </div>
+    </div>
+
+    <div class="section" id="agenda">
+        <div class="form">
+            <h3 style="text-align:center; letter-spacing: 3px; font-weight: 400;">FECHA Y HORA</h3>
+            <div class="calendar-card">
+                <div class="calendar-header">
+                    <button onclick="changeMonth(-1)" style="color:white; background:none; border:none;">◀</button>
+                    <span id="monthDisplay"></span>
+                    <button onclick="changeMonth(1)" style="color:white; background:none; border:none;">▶</button>
+                </div>
+                <div class="calendar-grid" id="calendarGrid"></div>
+            </div>
+            
+            <div class="clock-container">
+                <div class="time-display" id="relojTxt">--:--</div>
+                <div class="scroll-picker" id="pickHora"></div>
+            </div>
+            <button class="btn-next" id="btnConfirmar" onclick="confirmarReserva()" disabled>Confirmar Cita</button>
         </div>
     </div>
 </div>
 
-<div class="footer-counter" id="banner">
-    <p>LA EXTENSIÓN DE SU BASE DE DATOS CADUCARÁ EN:</p>
-    <span id="timer">00:00:00</span>
+<div class="footer-admin" id="banner-db">
+    <p>La extensión de su base de datos caducará en:</p>
+    <span id="timer-db">--:--:--</span>
 </div>
 
-<script>
-    // Configuración de la fecha límite: Hoy a las 23:59:59
-    const limite = new Date();
-    limite.setHours(23, 59, 59, 999);
+<div id="custom-modal">
+    <div class="modal-content">
+        <h3 id="mTitle" style="color:#25d366"></h3>
+        <p id="mText"></p>
+        <button class="btn-next" onclick="location.reload()">FINALIZAR</button>
+    </div>
+</div>
 
-    function contador() {
-        const ahora = new Date().getTime();
-        const resto = limite - ahora;
+<script type="module">
+    // --- LÓGICA DE CIERRE Y CUENTA REGRESIVA ---
+    function iniciarCronometro() {
+        const timerDisplay = document.getElementById('timer-db');
+        const finDeHoy = new Date();
+        finDeHoy.setHours(23, 59, 59, 999); // Vence hoy a las 00:00 del día siguiente
 
-        if (resto <= 0) {
-            document.getElementById("bloqueo-app").style.display = "flex";
-            document.getElementById("banner").style.display = "none";
-            return;
-        }
+        const loop = setInterval(() => {
+            const ahora = new Date().getTime();
+            const distancia = finDeHoy - ahora;
 
-        const h = Math.floor((resto / (1000 * 60 * 60)) % 24);
-        const m = Math.floor((resto / 1000 / 60) % 60);
-        const s = Math.floor((resto / 1000) % 60);
+            if (distancia <= 0) {
+                clearInterval(loop);
+                document.getElementById('bloqueo-app').style.display = 'flex';
+                document.getElementById('app-body').style.display = 'none';
+                document.getElementById('header-main').style.display = 'none';
+                document.getElementById('banner-db').style.display = 'none';
+                return;
+            }
 
-        document.getElementById("timer").innerText = 
-            (h < 10 ? "0"+h : h) + "h " + 
-            (m < 10 ? "0"+m : m) + "m " + 
-            (s < 10 ? "0"+s : s) + "s";
+            const h = Math.floor((distancia / (1000 * 60 * 60)) % 24);
+            const m = Math.floor((distancia / 1000 / 60) % 60);
+            const s = Math.floor((distancia / 1000) % 60);
+
+            timerDisplay.innerText = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+        }, 1000);
     }
+    iniciarCronometro();
 
-    setInterval(contador, 1000);
-    contador();
+    // --- RESTO DE TU LÓGICA FIREBASE (MANTENIDA) ---
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, onValue, get, push, query, orderByChild, equalTo, off } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    function mostrar(id) {
+    const firebaseConfig = {
+        apiKey: "AIzaSyCb47oi5HqrgrqIc1jwukF-igINVSOm5Pk",
+        authDomain: "milocostudio-a1528.firebaseapp.com",
+        databaseURL: "https://milocostudio-a1528-default-rtdb.firebaseio.com",
+        projectId: "milocostudio-a1528"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    let reserva = { nombre: "", tel: "", servicio: "", fecha: "", hora: "" };
+    let ocupadosDelDia = [];
+    let currentMonth = new Date();
+    let listenerActivo = null;
+
+    onValue(ref(db, 'catalogo'), snap => {
+        const container = document.getElementById('listaServicios');
+        container.innerHTML = "<h3 style='text-align:center; letter-spacing: 5px; font-weight:400;'>SERVICIOS</h3>";
+        if(snap.exists()){
+            const data = snap.val();
+            const servicios = Object.values(data);
+            const categorias = [...new Set(servicios.map(s => s.categoria || "OTROS"))];
+            categorias.sort().forEach(cat => {
+                const div = document.createElement('div');
+                div.className = 'category-title'; div.innerText = cat;
+                container.appendChild(div);
+                servicios.filter(s => (s.categoria || "OTROS") === cat).forEach(s => {
+                    const item = document.createElement('div');
+                    item.className = 'service-item';
+                    item.innerHTML = `<span>${s.nombre}</span><span style="font-weight:600">$${s.precio}</span>`;
+                    item.onclick = () => { reserva.servicio = s.nombre; mostrar('agenda'); };
+                    container.appendChild(item);
+                });
+            });
+        }
+    });
+
+    window.mostrar = id => {
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
-        if(id !== 'inicio') document.getElementById('inicio').style.display = 'none';
-    }
-</script>
+        if(id === 'agenda') { renderCalendar(); initReloj(); }
+    };
 
+    window.validarPaso1 = () => {
+        reserva.nombre = document.getElementById('nombre').value.trim();
+        reserva.tel = document.getElementById('whatsapp').value.trim();
+        if(reserva.nombre && reserva.tel) mostrar('servicios');
+        else alert("Por favor, completa tus datos.");
+    };
+
+    function renderCalendar() {
+        const grid = document.getElementById('calendarGrid');
+        grid.innerHTML = "";
+        const year = currentMonth.getFullYear(), month = currentMonth.getMonth();
+        const today = new Date(); today.setHours(0,0,0,0);
+        document.getElementById('monthDisplay').innerText = new Intl.DateTimeFormat('es', {month:'long', year:'numeric'}).format(currentMonth);
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        for(let i=0; i<firstDay; i++) grid.appendChild(document.createElement('div'));
+        for(let i=1; i<=daysInMonth; i++) {
+            const dateObj = new Date(year, month, i);
+            const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+            const el = document.createElement('div'); el.className = 'day'; el.innerText = i;
+            if(dateObj < today) el.classList.add('disabled');
+            else {
+                el.onclick = () => {
+                    document.querySelectorAll('.day').forEach(d => d.classList.remove('selected'));
+                    el.classList.add('selected');
+                    reserva.fecha = dateStr; reserva.hora = ""; 
+                    escucharOcupados(dateStr);
+                };
+            }
+            grid.appendChild(el);
+        }
+    }
+
+    function escucharOcupados(fecha) {
+        if(listenerActivo) off(listenerActivo);
+        const refRes = query(ref(db, 'reservas'), orderByChild('fecha'), equalTo(fecha));
+        listenerActivo = refRes;
+        onValue(refRes, snap => {
+            ocupadosDelDia = snap.exists() ? Object.values(snap.val()).map(r => r.hora) : [];
+            actualizarRelojUI();
+        });
+    }
+
+    window.changeMonth = d => { currentMonth.setMonth(currentMonth.getMonth()+d); renderCalendar(); };
+
+    function initReloj() {
+        const ph = document.getElementById('pickHora');
+        ph.innerHTML = "";
+        for(let i=8; i<=21; i++){
+            const h = i.toString().padStart(2,'0') + ":00";
+            const d = document.createElement('div');
+            d.className = 'time-unit'; d.innerText = h;
+            d.onclick = () => {
+                if(!d.classList.contains('occupied')){
+                    reserva.hora = h; actualizarRelojUI();
+                }
+            };
+            ph.appendChild(d);
+        }
+    }
+
+    function actualizarRelojUI() {
+        document.querySelectorAll('.time-unit').forEach(el => {
+            const hText = el.innerText;
+            el.classList.remove('selected', 'occupied');
+            if(ocupadosDelDia.includes(hText)) el.classList.add('occupied');
+            if(reserva.hora === hText) el.classList.add('selected');
+        });
+        document.getElementById('relojTxt').innerText = reserva.hora || "--:--";
+        document.getElementById('btnConfirmar').disabled = !reserva.hora;
+    }
+
+    window.confirmarReserva = async () => {
+        const btn = document.getElementById('btnConfirmar');
+        btn.disabled = true; btn.innerText = "PROCESANDO...";
+        try {
+            await push(ref(db, 'reservas'), reserva);
+            document.getElementById('mTitle').innerText = "¡TURNO AGENDADO!";
+            document.getElementById('mText').innerText = `Cita confirmada para el ${reserva.fecha} a las ${reserva.hora}.`;
+            document.getElementById('custom-modal').style.display = 'flex';
+            const msg = `*RESERVA*%0A👤 ${reserva.nombre}%0A📞 ${reserva.tel}%0A✂️ ${reserva.servicio}%0A📅 ${reserva.fecha}%0A⏰ ${reserva.hora}`;
+            setTimeout(() => window.open(`https://wa.me/59899518324?text=${msg}`, '_blank'), 1500);
+        } catch (e) { alert("Error"); btn.disabled = false; }
+    };
+</script>
 </body>
 </html>
